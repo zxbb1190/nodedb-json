@@ -1,0 +1,24 @@
+{
+  "name": "nodedb-json",
+  "version": "0.0.1",
+  "description": "nodedb-json is a lightweight JSON file database tool designed for Electron applications.  It provides an easy-to-use API for setting, reading, querying, updating, and deleting data stored in JSON files.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zxbb1190/nodedb-json.git"
+  },
+  "keywords": [
+    "json",
+    "database",
+    "electron",
+    "lowdb"
+  ],
+  "author": "Xiaoman",
+  "license": "MIT",
+  "dependencies": {
+    "lodash": "^4.17.21"
+  }
+}
