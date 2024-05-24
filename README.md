@@ -54,7 +54,3 @@ Filters elements in a collection based on the predicate.
 ### License
 
 MIT
-
----
-
-This description provides a clear and concise overview of the `nodedb-json` tool, its features, installation instructions, usage example, API details, and license information.
