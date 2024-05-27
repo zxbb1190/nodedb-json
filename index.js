@@ -53,17 +53,29 @@ class NodedbJson {
         return this;
     }
 
-    delete(key, predicate) {
-      const data = this.get(key);
-      if (Array.isArray(data) && typeof predicate === 'function') {
-        _.remove(data, predicate);
-      } else if (this.has(key)) {
-        _.unset(this.data, key);
-      } else {
-        throw new Error(`Key "${key}" does not exist or predicate is not provided for array.`);
-      }
-      this.writeJSONFile();
-      return this;
+    delete(key, predicateOrKeys, field = 'id') {
+        const data = this.get(key);
+        if (Array.isArray(data)) {
+            if (typeof predicateOrKeys === 'function') {
+                _.remove(data, predicateOrKeys);
+            } else if (Array.isArray(predicateOrKeys)) {
+                _.remove(data, item => predicateOrKeys.includes(item[field]));
+            } else {
+                throw new Error(`Predicate or keys array must be provided for array deletion.`);
+            }
+        } else if (this.has(key)) {
+            if (Array.isArray(predicateOrKeys)) {
+                predicateOrKeys.forEach(itemKey => {
+                    _.unset(this.data[key], itemKey);
+                });
+            } else {
+                _.unset(this.data, key);
+            }
+        } else {
+            throw new Error(`Key "${key}" does not exist.`);
+        }
+        this.writeJSONFile();
+        return this;
     }
 
     find(key, predicate) {

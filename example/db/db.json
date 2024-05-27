@@ -8,5 +8,11 @@
       "name": "Charlie",
       "age": 36
     }
+  ],
+  "users2": [
+    {
+      "id": 2,
+      "name": "Bob"
+    }
   ]
 }
