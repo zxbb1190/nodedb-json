@@ -89,14 +89,26 @@ class NodedbJson {
     }
     
     push(key, value) {
-      const array = this.get(key);
-      if (Array.isArray(array)) {
-        array.push(value);
-        this.writeJSONFile();
-      } else {
-        throw new Error(`Key "${key}" is not an array.`);
-      }
-      return this;
+        if (!this.has(key)) {
+            if (Array.isArray(value)) {
+                this.set(key, value);
+            } else {
+                this.set(key, [value]);
+            }
+        } else {
+            const array = this.get(key);
+            if (Array.isArray(array)) {
+                if (Array.isArray(value)) {
+                    array.push(...value);
+                } else {
+                    array.push(value);
+                }
+                this.writeJSONFile();
+            } else {
+                throw new Error(`Key "${key}" is not an array.`);
+            }
+        }
+        return this;
     }
 }
 

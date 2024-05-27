@@ -45,6 +45,10 @@ console.log(db.find('users', user => user.name === 'Charlie')); // { name: 'Char
 console.log(db.filter('users', user => user.age > 30)); // [{ name: 'Charlie', age: 36 }]
 ```
 
+### Changelog
+#### Version 1.2.0
+- Added support for pushing a value or an array of values to an array key using the push method.
+
 ### API
 
 #### `set(key, value)`
@@ -59,7 +63,7 @@ Checks if the specified key exists.
 #### `update(key, updater)`
 - If key references an object:
   - Updates the value at the specified key using the provided updater function.
-If key references an array:
+- If key references an array:
   - Finds an element in the array that matches the predicate and updates it using the provided updater object.
 
 #### `delete(key)`
@@ -75,7 +79,7 @@ Finds an element in the collection or array at the specified key that matches th
 Filters elements in the collection or array at the specified key based on the predicate.
 
 #### `push(key, value)`
-Pushes a value to the array at the specified key.
+Pushes a value or an array of values to the array at the specified key. If the key does not exist, it creates the key and sets its value to the provided array.
 
 ### License
 

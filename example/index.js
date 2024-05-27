@@ -11,7 +11,8 @@ db.set("user.name", "Alice").set("user.age", 25);
 console.log(db.get("user")); // { name: 'Alice', age: 25 }
 
 // Array operations
-db.set("users", []).push("users", { name: "Bob", age: 30 }).push("users", { name: "Charlie", age: 35 });
+// db.push("users", { name: "Bob", age: 30 }).push("users", { name: "Charlie", age: 35 });
+db.push("users", [{ name: "Bob", age: 30 },{ name: "Charlie", age: 35 }])
 
 console.log(db.get("users")); // [{ name: 'Bob', age: 30 }, { name: 'Charlie', age: 35 }]
 
