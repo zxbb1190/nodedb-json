@@ -14,10 +14,22 @@
     "json",
     "database",
     "electron",
-    "lowdb"
+    "jsondb",
+    "nodedb",
+    "lowdb",
+    "electron-store",
+    "electron-db",
+    "db"
   ],
-  "author": "Xiaoman",
+  "author":{
+    "name": "Xiaoman",
+    "email": "douyaj33@gmail.com"
+  },
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zxbb1190/nodedb-json/issues",
+    "email": "douyaj33@gmail.com"
+  },
   "dependencies": {
     "lodash": "^4.17.21"
   }

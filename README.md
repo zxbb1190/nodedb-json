@@ -81,5 +81,11 @@ Pushes a value to the array at the specified key.
 
 MIT
 
+### Contact
+For any questions or feedback, please contact me at  [douyaj33@gmail.com](mailto:douyaj33@gmail.com).
+
+For issues and support, visit the [GitHub Issues page](https://github.com/zxbb1190/nodedb-json/issues).
+
+
 
 
