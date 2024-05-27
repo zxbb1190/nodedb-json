@@ -29,9 +29,8 @@ db.set('user.name', 'Alice')
 console.log(db.get('user')); // { name: 'Alice', age: 25 }
 
 // Array operations
-db.set('users', [])
-  .push('users', { name: 'Bob', age: 30 })
-  .push('users', { name: 'Charlie', age: 35 });
+// db.push("users", { name: "Bob", age: 30 }).push("users", { name: "Charlie", age: 35 });
+db.push("users", [{ name: "Bob", age: 30 },{ name: "Charlie", age: 35 }])
 
 console.log(db.get('users')); // [{ name: 'Bob', age: 30 }, { name: 'Charlie', age: 35 }]
 
@@ -46,7 +45,7 @@ console.log(db.filter('users', user => user.age > 30)); // [{ name: 'Charlie', a
 ```
 
 ### Changelog
-#### Version 1.2.0
+#### Version 0.1.2
 - Added support for pushing a value or an array of values to an array key using the push method.
 
 ### API
