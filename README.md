@@ -1,11 +1,11 @@
 ## nodedb-json
 
-**nodedb-json** is a lightweight JSON file database tool designed for Electron applications. It provides an easy-to-use API for setting, reading, querying, updating, and deleting data stored in JSON files.
+**nodedb-json** is a lightweight JSON file database tool designed for Node.js. It provides an easy-to-use API for setting, reading, querying, updating, and deleting data stored in JSON files. Supports both CommonJS and ES6 module syntax.
 
 ### Features
 
 -   **Simple and Intuitive**: Easy-to-use API for seamless interaction with JSON files.
--   **Persistent Storage**: Data is stored persistently in JSON files, perfect for Electron applications.
+-   **Persistent Storage**: Data is stored persistently in JSON files, perfect for Node.js.
 -   **Flexible Querying**: Supports querying and filtering of collections.
 -   **Array Operations**: Provides robust methods for manipulating arrays, including adding, removing, and updating elements.
 -   **Lightweight**: Minimal dependencies, ensuring fast performance.
@@ -18,11 +18,24 @@ npm install nodedb-json
 
 ### Usage
 
-### Initialization
+#### CommonJS
 
 ```javascript
-const NodedbJson = require("nodedbjson");
-const db = new NodedbJson("db.json");
+const NodedbJson = require('nodedb-json');
+const db = new NodedbJson('path/to/db.json');
+
+db.set('name', 'John Doe');
+console.log(db.get('name')); // Outputs: John Doe
+```
+
+#### ES6
+
+```javascript
+import NodedbJson from 'nodedb-json';
+const db = new NodedbJson('path/to/db.json');
+
+db.set('name', 'John Doe');
+console.log(db.get('name')); // Outputs: John Doe
 ```
 
 ### Basic Operations
@@ -87,60 +100,81 @@ const item = db.find("arrayKey", (item) => item.id === 2);
 const items = db.filter("arrayKey", (item) => item.isActive);
 ```
 
-### Changelog
+## Changelog
 
-#### v0.1.4
-- Added support for batch deleting array items by specified field in the delete method.
+### [1.0.0] - 2024-05-27
+- Major version update.
+- Added support for ES6 module syntax.
+- Enhanced `delete` method to support batch deletion by specifying a field.
+- Added JSDoc comments for all methods.
 
-#### v0.1.3
+### [0.1.4] - 2024-05-20
+- Initial release with basic CRUD operations.
+- Support for array operations with `push`, `find`, and `filter`.
 
--   Added support for pushing a value or an array of values to an array key using the push method.
+##
 
-### API
+### API Documentation
 
 #### `set(key, value)`
-
-Sets a value at the specified key.
+Sets a value in the JSON data.
+- **Parameters:**
+  - `key` (string): The key to set.
+  - `value` (any): The value to set.
+- **Returns:** `NodedbJson` - The instance of the database for chaining.
 
 #### `get(key)`
-
-Gets the value at the specified key.
+Gets a value from the JSON data.
+- **Parameters:**
+  - `key` (string): The key to get.
+- **Returns:** `any` - The value.
 
 #### `has(key)`
+Checks if a key exists in the JSON data.
+- **Parameters:**
+  - `key` (string): The key to check.
+- **Returns:** `boolean` - True if the key exists, otherwise false.
 
-Checks if the specified key exists.
+#### `update(key, predicateOrUpdater, updater)`
+Updates a value in the JSON data.
+- **Parameters:**
+  - `key` (string): The key to update.
+  - `predicateOrUpdater` (function|object): The predicate function or updater object.
+  - `updater` (object) [optional]: The updater object if a predicate function is provided.
+- **Returns:** `NodedbJson` - The instance of the database for chaining.
 
-#### `update(key, predicateOrUpdater, [updater])`
+#### `delete(key, predicateOrKeys, field)`
+Deletes a value from the JSON data.
+- **Parameters:**
+  - `key` (string): The key to delete.
+  - `predicateOrKeys` (function|string[]) [optional]: The predicate function or array of keys to delete.
+  - `field` (string) [optional]: The field to match for array deletion. Default is 'id'.
+- **Returns:** `NodedbJson` - The instance of the database for chaining.
 
--   If key references an object:
-    -   Updates the value at the specified key using the provided updater function.
--   If key references an array:
-    -   Finds an element in the array that matches the predicate and updates it using the provided updater object.
+#### `find(key, predicate)`
+Finds a value in the JSON data.
+- **Parameters:**
+  - `key` (string): The key to find.
+  - `predicate` (function): The predicate function to match.
+- **Returns:** `any` - The found value.
 
-#### `delete(key, [predicateOrKeys], [field='id'])`
-
--   If key references an object:
-    -   Deletes the specified key and its value.
--   If key references an array and predicate is provided:
-    -   Removes elements from the array at the specified key that match the predicate.
--   If key references an array and an array of keys is provided:
-    -   Removes elements from the array that match any of the keys in the provided array, based on the specified field.
-
-#### `find(collection, predicate)`
-
-Finds an element in the collection or array at the specified key that matches the predicate.
-
-#### `filter(collection, predicate)`
-
-Filters elements in the collection or array at the specified key based on the predicate.
+#### `filter(key, predicate)`
+Filters values in the JSON data.
+- **Parameters:**
+  - `key` (string): The key to filter.
+  - `predicate` (function): The predicate function to match.
+- **Returns:** `any[]` - The filtered values.
 
 #### `push(key, value)`
-
-Pushes a value or an array of values to the array at the specified key. If the key does not exist, it creates the key and sets its value to the provided array.
+Pushes a value into an array in the JSON data.
+- **Parameters:**
+  - `key` (string): The key to push to.
+  - `value` (any|any[]): The value or values to push.
+- **Returns:** `NodedbJson` - The instance of the database for chaining.
 
 ### License
 
-MIT
+MIT 
 
 ### Contact
 

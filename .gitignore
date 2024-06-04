@@ -13,3 +13,4 @@ yarn-error.log*
 *.sln
 package-lock.json
 README-demo.md
+logo.svg

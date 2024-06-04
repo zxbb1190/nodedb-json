@@ -1,13 +1,23 @@
 const fs = require("fs");
-const path = require("path");
 const _ = require("lodash");
 
+/**
+ * A class to manage JSON-based database operations.
+ */
 class NodedbJson {
+     /**
+     * Creates an instance of NodedbJson.
+     * @param {string} filePath - The path to the JSON file.
+     */
     constructor(filePath) {
         this.filePath = filePath;
         this.data = this.readJSONFile();
     }
 
+    /**
+     * Reads the JSON file.
+     * @returns {object} - The parsed JSON data.
+     */
     readJSONFile() {
         if (!fs.existsSync(this.filePath)) {
             fs.writeFileSync(this.filePath, JSON.stringify({}), "utf-8");
@@ -16,24 +26,50 @@ class NodedbJson {
         return JSON.parse(fileData);
     }
 
+     /**
+     * Writes the JSON data to the file.
+     */
     writeJSONFile() {
         fs.writeFileSync(this.filePath, JSON.stringify(this.data, null, 2), "utf-8");
     }
 
+    /**
+     * Sets a value in the JSON data.
+     * @param {string} key - The key to set.
+     * @param {any} value - The value to set.
+     * @returns {NodedbJson} - The instance of the database for chaining.
+     */
     set(key, value) {
         _.set(this.data, key, value);
         this.writeJSONFile();
         return this;
     }
 
+    /**
+     * Gets a value from the JSON data.
+     * @param {string} key - The key to get.
+     * @returns {any} - The value.
+     */
     get(key) {
         return _.get(this.data, key);
     }
 
+    /**
+     * Checks if a key exists in the JSON data.
+     * @param {string} key - The key to check.
+     * @returns {boolean} - True if the key exists, otherwise false.
+     */
     has(key) {
         return _.has(this.data, key);
     }
 
+     /**
+     * Updates a value in the JSON data.
+     * @param {string} key - The key to update.
+     * @param {function|object} predicateOrUpdater - The predicate function or updater object.
+     * @param {object} [updater] - The updater object if a predicate function is provided.
+     * @returns {NodedbJson} - The instance of the database for chaining.
+     */
     update(key, predicateOrUpdater, updater) {
         const data = this.get(key);
         if (Array.isArray(data)) {
@@ -53,6 +89,13 @@ class NodedbJson {
         return this;
     }
 
+     /**
+     * Deletes a value from the JSON data.
+     * @param {string} key - The key to delete.
+     * @param {function|string[]} [predicateOrKeys] - The predicate function or array of keys to delete.
+     * @param {string} [field='id'] - The field to match for array deletion.
+     * @returns {NodedbJson} - The instance of the database for chaining.
+     */
     delete(key, predicateOrKeys, field = 'id') {
         const data = this.get(key);
         if (Array.isArray(data)) {
@@ -78,6 +121,12 @@ class NodedbJson {
         return this;
     }
 
+    /**
+     * Finds a value in the JSON data.
+     * @param {string} key - The key to find.
+     * @param {function} predicate - The predicate function to match.
+     * @returns {any} - The found value.
+     */
     find(key, predicate) {
         const data = this.get(key);
         if (Array.isArray(data)) {
@@ -89,6 +138,12 @@ class NodedbJson {
         }
     }
 
+    /**
+     * Filters values in the JSON data.
+     * @param {string} key - The key to filter.
+     * @param {function} predicate - The predicate function to match.
+     * @returns {any[]} - The filtered values.
+     */
     filter(key, predicate) {
         const data = this.get(key);
         if (Array.isArray(data)) {
@@ -100,6 +155,12 @@ class NodedbJson {
         }
     }
     
+    /**
+     * Pushes a value into an array in the JSON data.
+     * @param {string} key - The key to push to.
+     * @param {any|any[]} value - The value or values to push.
+     * @returns {NodedbJson} - The instance of the database for chaining.
+     */
     push(key, value) {
         if (!this.has(key)) {
             if (Array.isArray(value)) {
@@ -124,4 +185,9 @@ class NodedbJson {
     }
 }
 
-module.exports = NodedbJson;
+// Conditional export for ES6 modules
+if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
+    module.exports = NodedbJson;
+} else {
+    window.NodedbJson = NodedbJson;
+}
