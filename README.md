@@ -1,6 +1,6 @@
 ## nodedb-json
 
-**nodedb-json** is a lightweight JSON file database tool designed for Node.js. It provides an easy-to-use API for setting, reading, querying, updating, and deleting data stored in JSON files. Supports both CommonJS and ES6 module syntax.
+**nodedb-json** is a lightweight JSON file database tool designed for Node.js. It provides an easy-to-use API for setting, reading, querying, updating, and deleting data stored in JSON files. Supports both CommonJS and ES6 module syntax, as well as TypeScript.
 
 ### Features
 
@@ -9,6 +9,8 @@
 -   **Flexible Querying**: Supports querying and filtering of collections.
 -   **Array Operations**: Provides robust methods for manipulating arrays, including adding, removing, and updating elements.
 -   **Lightweight**: Minimal dependencies, ensuring fast performance.
+-   **TypeScript Support**: Full TypeScript support with type definitions.
+-   **Batch Operations**: Support for executing multiple operations in batch.
 
 ### Installation
 
@@ -36,6 +38,30 @@ const db = new NodedbJson('path/to/db.json');
 
 db.set('name', 'John Doe');
 console.log(db.get('name')); // Outputs: John Doe
+```
+
+#### TypeScript
+
+```typescript
+import NodedbJson from 'nodedb-json';
+
+// Define your data types
+interface User {
+  id: number;
+  name: string;
+  age: number;
+}
+
+// Create database with options
+const db = new NodedbJson<User>('path/to/db.json', {
+  autoSave: true,
+  createIfNotExists: true,
+  defaultValue: { users: [] }
+});
+
+// Type-safe operations
+db.push('users', { id: 1, name: 'John', age: 30 });
+const user = db.find<User>('users', user => user.id === 1);
 ```
 
 ### Basic Operations
@@ -100,7 +126,38 @@ const item = db.find("arrayKey", (item) => item.id === 2);
 const items = db.filter("arrayKey", (item) => item.isActive);
 ```
 
+#### Batch Operations
+
+```javascript
+db.batch([
+  { method: "set", args: ["config.theme", "dark"] },
+  { method: "set", args: ["config.language", "zh-CN"] },
+  { method: "push", args: ["logs", { time: new Date().toISOString(), action: "配置更新" }] }
+]);
+```
+
+#### Manual Save
+
+```javascript
+// Configure auto-save
+const db = new NodedbJson('path/to/db.json', { autoSave: false });
+
+// Make changes
+db.set("key1", "value1");
+db.set("key2", "value2");
+
+// Manually save when ready
+db.save();
+```
+
 ## Changelog
+
+### [1.1.0] - 2024-06-01
+- Added TypeScript support with type definitions
+- Added batch operations
+- Added configuration options
+- Added manual save functionality
+- Improved error handling
 
 ### [1.0.0] - 2024-05-27
 - Major version update.
@@ -112,9 +169,17 @@ const items = db.filter("arrayKey", (item) => item.isActive);
 - Initial release with basic CRUD operations.
 - Support for array operations with `push`, `find`, and `filter`.
 
-##
+## API Documentation
 
-### API Documentation
+### Constructor Options
+
+```typescript
+interface DbOptions {
+  autoSave?: boolean;        // Auto save after each operation (default: true)
+  createIfNotExists?: boolean; // Create file if it doesn't exist (default: true)
+  defaultValue?: Record<string, any>; // Default value for new database
+}
+```
 
 #### `set(key, value)`
 Sets a value in the JSON data.
@@ -170,6 +235,16 @@ Pushes a value into an array in the JSON data.
 - **Parameters:**
   - `key` (string): The key to push to.
   - `value` (any|any[]): The value or values to push.
+- **Returns:** `NodedbJson` - The instance of the database for chaining.
+
+#### `batch(operations)`
+Executes multiple operations in batch.
+- **Parameters:**
+  - `operations` (Array<{method: string, args: any[]}>): Array of operations to execute.
+- **Returns:** `NodedbJson` - The instance of the database for chaining.
+
+#### `save()`
+Manually save changes to file.
 - **Returns:** `NodedbJson` - The instance of the database for chaining.
 
 ### License

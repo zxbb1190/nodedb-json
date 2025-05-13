@@ -1,0 +1,30 @@
+{
+  "initialized": true,
+  "user": {
+    "name": "Alice",
+    "age": 25
+  },
+  "users": [
+    {
+      "id": 1,
+      "name": "Bob",
+      "age": 31,
+      "role": "admin"
+    },
+    {
+      "id": 2,
+      "name": "Charlie",
+      "age": 35
+    }
+  ],
+  "config": {
+    "theme": "dark",
+    "language": "zh-CN"
+  },
+  "logs": [
+    {
+      "time": "2025-05-13T02:19:03.872Z",
+      "action": "配置更新"
+    }
+  ]
+}

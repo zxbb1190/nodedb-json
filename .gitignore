@@ -4,6 +4,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# TypeScript 相关
+*.tsbuildinfo
+# dist/ # 注意：作为库项目，dist 目录应该被提交以便发布
+
 # Editor directories and files
 .idea
 .vscode
@@ -14,3 +18,6 @@ yarn-error.log*
 package-lock.json
 README-demo.md
 logo.svg
+.cursor/
+-p
+test-upgrade/

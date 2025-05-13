@@ -7,9 +7,17 @@
     {
       "name": "Charlie",
       "age": 36
+    },
+    {
+      "name": "Charlie",
+      "age": 35
     }
   ],
   "users2": [
+    {
+      "id": 2,
+      "name": "Bob"
+    },
     {
       "id": 2,
       "name": "Bob"

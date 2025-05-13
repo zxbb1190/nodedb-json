@@ -1,10 +1,19 @@
 {
   "name": "nodedb-json",
-  "version": "1.0.0",
-  "description": "nodedb-json is a lightweight JSON file database tool designed for Electron applications.  It provides an easy-to-use API for setting, reading, querying, updating, and deleting data stored in JSON files.",
-  "main": "index.js",
+  "version": "1.1.0",
+  "description": "nodedb-json is a lightweight JSON file database tool designed for Node.js applications. It provides an easy-to-use API for setting, reading, querying, updating, and deleting data stored in JSON files.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "example": "ts-node example/ts-example.ts"
   },
   "repository": {
     "type": "git",
@@ -19,9 +28,10 @@
     "lowdb",
     "electron-store",
     "electron-db",
-    "db"
+    "db",
+    "typescript"
   ],
-  "author":{
+  "author": {
     "name": "Xiaoman",
     "email": "douyaj33@gmail.com"
   },
@@ -32,5 +42,11 @@
   },
   "dependencies": {
     "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.195",
+    "@types/node": "^20.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.1.6"
   }
 }
