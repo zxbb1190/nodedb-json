@@ -152,7 +152,7 @@ db.save();
 
 ## Changelog
 
-### [1.1.0] - 2024-06-01
+### [1.1.0] - 2025-05-13
 - Added TypeScript support with type definitions
 - Added batch operations
 - Added configuration options
