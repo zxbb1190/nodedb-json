@@ -11,6 +11,7 @@
 -   **Lightweight**: Minimal dependencies, ensuring fast performance.
 -   **TypeScript Support**: Full TypeScript support with type definitions.
 -   **Batch Operations**: Support for executing multiple operations in batch.
+-   **Indexing**: Supports creating indexes on array fields for faster lookups.
 
 ### Installation
 
@@ -150,7 +151,33 @@ db.set("key2", "value2");
 db.save();
 ```
 
+### Indexing
+
+Indexing can significantly improve lookup performance for large datasets:
+
+```javascript
+// Create a unique index on the 'id' field
+db.createIndex("users", { field: "id", type: "unique" });
+
+// Create a multi-value index on the 'age' field
+db.createIndex("users", { field: "age", type: "multi" });
+
+// Find using index
+const user = db.findByField("users", "id", 1);
+
+// Filter using index
+const adults = db.filterByField("users", "age", [30, 40, 50]);
+
+// Drop an index when no longer needed
+db.dropIndex("users", "age");
+```
+
 ## Changelog
+
+### [1.2.0] - 2024-06-15
+- Added indexing support for faster lookups
+- Added `findByField` and `filterByField` methods for index-based queries
+- Performance improvements for large datasets
 
 ### [1.1.0] - 2024-06-01
 - Added TypeScript support with type definitions
@@ -178,8 +205,12 @@ interface DbOptions {
   autoSave?: boolean;        // Auto save after each operation (default: true)
   createIfNotExists?: boolean; // Create file if it doesn't exist (default: true)
   defaultValue?: Record<string, any>; // Default value for new database
+  enableIndexing?: boolean;   // Enable indexing functionality (default: true)
+  autoIndex?: boolean;        // Auto rebuild indexes on start (default: true)
 }
 ```
+
+### Basic Methods
 
 #### `set(key, value)`
 Sets a value in the JSON data.
@@ -237,6 +268,8 @@ Pushes a value into an array in the JSON data.
   - `value` (any|any[]): The value or values to push.
 - **Returns:** `NodedbJson` - The instance of the database for chaining.
 
+### Advanced Methods
+
 #### `batch(operations)`
 Executes multiple operations in batch.
 - **Parameters:**
@@ -246,6 +279,42 @@ Executes multiple operations in batch.
 #### `save()`
 Manually save changes to file.
 - **Returns:** `NodedbJson` - The instance of the database for chaining.
+
+### Indexing Methods
+
+#### `createIndex(key, indexDefinition)`
+Creates an index on a field for faster lookups.
+- **Parameters:**
+  - `key` (string): The collection path to index.
+  - `indexDefinition` (IndexDefinition): The index definition with field and type.
+- **Returns:** `NodedbJson` - The instance of the database for chaining.
+
+#### `findByField(key, field, value)`
+Finds a value by field using an index if available.
+- **Parameters:**
+  - `key` (string): The key to find.
+  - `field` (string): The field to match.
+  - `value` (any): The value to match.
+- **Returns:** `any` - The found value.
+
+#### `filterByField(key, field, values)`
+Filters values by field and possible values using an index if available.
+- **Parameters:**
+  - `key` (string): The key to filter.
+  - `field` (string): The field to match.
+  - `values` (any[]): The values to match.
+- **Returns:** `any[]` - The filtered values.
+
+#### `dropIndex(key, field)`
+Removes an index.
+- **Parameters:**
+  - `key` (string): The collection path.
+  - `field` (string): The field name.
+- **Returns:** `NodedbJson` - The instance of the database for chaining.
+
+#### `getIndexes()`
+Gets all index definitions.
+- **Returns:** `Record<string, Record<string, IndexDefinition>>` - The index definitions.
 
 ### License
 
