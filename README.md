@@ -174,12 +174,31 @@ db.dropIndex("users", "age");
 
 ## Changelog
 
-### [1.2.0] - 2024-06-15
+### [1.3.0] - 2025-06-03
+- **Major Feature Update: Complex Query Support**
+  - Added `query()` method with comprehensive query operations
+  - Support for multi-field sorting
+  - Support for pagination queries
+  - Support for aggregation operations: count, sum, avg, min, max, group
+  - Support for field selection/projection
+  - Added convenient query methods: `orderBy()`, `paginate()`, `count()`, `aggregate()`, `distinct()`
+  - Intelligent index utilization with automatic query optimization
+  - Detailed query statistics (execution time, index usage, etc.)
+- **Performance Optimizations**
+  - Query operations with index acceleration support
+  - Lazy evaluation for optimized large dataset processing
+  - Execution time monitoring and performance metrics
+- **Developer Experience Improvements**
+  - Complete TypeScript type support
+  - Rich documentation and examples
+  - Added `npm run example:query` demonstration script
+
+### [1.2.0] - 2025-05-26
 - Added indexing support for faster lookups
 - Added `findByField` and `filterByField` methods for index-based queries
 - Performance improvements for large datasets
 
-### [1.1.0] - 2024-06-01
+### [1.1.0] - 2025-05-13
 - Added TypeScript support with type definitions
 - Added batch operations
 - Added configuration options
@@ -315,6 +334,218 @@ Removes an index.
 #### `getIndexes()`
 Gets all index definitions.
 - **Returns:** `Record<string, Record<string, IndexDefinition>>` - The index definitions.
+
+## Complex Query Operations
+
+NodeDB-JSON supports powerful complex query operations including sorting, pagination, aggregation, and more. All query operations can leverage indexes for optimal performance.
+
+### Core Query Method
+
+#### `query(key, options)`
+Executes a complex query with multiple options.
+- **Parameters:**
+  - `key` (string): The collection path to query.
+  - `options` (QueryOptions): Query configuration object.
+- **Returns:** `QueryResult` - Comprehensive query results with data, pagination, aggregations, and statistics.
+
+### Query Options
+
+```typescript
+interface QueryOptions<T = any> {
+  where?: PredicateFunction<T> | Record<string, any>;  // Filter conditions
+  sort?: SortOption | SortOption[];                    // Sorting options
+  pagination?: PaginationOption;                       // Pagination settings
+  aggregation?: AggregationOption[];                   // Aggregation operations
+  select?: string[];                                   // Field selection (projection)
+  limit?: number;                                      // Limit results
+  skip?: number;                                       // Skip records
+}
+```
+
+### Basic Examples
+
+#### Filtering and Sorting
+
+```javascript
+// Find tech department employees, sorted by salary (descending)
+const result = db.query('users', {
+  where: { department: '技术部' },
+  sort: { field: 'salary', direction: 'desc' }
+});
+
+console.log('Found:', result.data.length, 'records');
+console.log('Execution time:', result.stats.executionTime, 'ms');
+console.log('Used index:', result.stats.usedIndex);
+```
+
+#### Multi-field Sorting
+
+```javascript
+// Sort by department (ascending), then by salary (descending)
+const result = db.query('users', {
+  sort: [
+    { field: 'department', direction: 'asc' },
+    { field: 'salary', direction: 'desc' }
+  ]
+});
+```
+
+#### Pagination
+
+```javascript
+// Get page 2 with 5 records per page
+const result = db.query('users', {
+  sort: { field: 'salary', direction: 'desc' },
+  pagination: { page: 2, pageSize: 5 }
+});
+
+console.log('Current page:', result.pagination.currentPage);
+console.log('Total pages:', result.pagination.totalPages);
+console.log('Has next page:', result.pagination.hasNext);
+```
+
+#### Field Selection (Projection)
+
+```javascript
+// Select only specific fields
+const result = db.query('users', {
+  where: { department: '技术部' },
+  select: ['name', 'salary', 'age'],
+  sort: { field: 'salary', direction: 'desc' }
+});
+```
+
+### Aggregation Operations
+
+#### Basic Aggregations
+
+```javascript
+// Get various statistics
+const result = db.query('users', {
+  aggregation: [
+    { type: 'count' },                    // Count records
+    { type: 'avg', field: 'salary' },     // Average salary
+    { type: 'sum', field: 'salary' },     // Total salary
+    { type: 'min', field: 'salary' },     // Minimum salary
+    { type: 'max', field: 'salary' },     // Maximum salary
+  ]
+});
+
+result.aggregations?.forEach(agg => {
+  console.log(`${agg.type}:`, agg.value);
+});
+```
+
+#### Group By
+
+```javascript
+// Group by department
+const result = db.query('users', {
+  aggregation: [
+    { type: 'group', groupBy: 'department' }
+  ]
+});
+
+const groups = result.aggregations?.[0]?.value as Record<string, any[]>;
+Object.entries(groups).forEach(([dept, users]) => {
+  console.log(`${dept}: ${users.length} employees`);
+});
+```
+
+### Complex Query Example
+
+```javascript
+// Complex query combining multiple features
+const result = db.query('users', {
+  where: user => user.department === '技术部' && user.salary > 12000,
+  sort: { field: 'age', direction: 'asc' },
+  pagination: { page: 1, pageSize: 10 },
+  select: ['name', 'age', 'salary'],
+  aggregation: [
+    { type: 'count' },
+    { type: 'avg', field: 'salary' }
+  ]
+});
+
+console.log('Results:', result.data);
+console.log('Total matching records:', result.aggregations?.[0]?.value);
+console.log('Average salary:', result.aggregations?.[1]?.value);
+```
+
+### Convenience Methods
+
+For common operations, convenience methods are available:
+
+#### `orderBy(key, sort, limit?)`
+Quick sorting with optional limit.
+
+```javascript
+// Get top 5 highest paid employees
+const topEarners = db.orderBy('users', 
+  { field: 'salary', direction: 'desc' }, 
+  5
+);
+```
+
+#### `paginate(key, page, pageSize, where?)`
+Quick pagination with optional filtering.
+
+```javascript
+// Get first page of sales department
+const salesPage = db.paginate('users', 1, 10, { department: '销售部' });
+```
+
+#### `count(key, where?)`
+Count records with optional filtering.
+
+```javascript
+// Count tech department employees
+const techCount = db.count('users', { department: '技术部' });
+```
+
+#### `aggregate(key, aggregations, where?)`
+Execute aggregations with optional filtering.
+
+```javascript
+// Get tech department salary statistics
+const techStats = db.aggregate('users', [
+  { type: 'count' },
+  { type: 'avg', field: 'salary' },
+  { type: 'max', field: 'salary' }
+], { department: '技术部' });
+```
+
+#### `distinct(key, field)`
+Get unique values for a field.
+
+```javascript
+// Get all unique departments
+const departments = db.distinct('users', 'department');
+console.log('Departments:', departments);
+```
+
+### Performance Features
+
+- **Index-aware filtering**: Automatically uses indexes when available for object-based where conditions
+- **Optimized sorting**: Leverages lodash's efficient orderBy implementation
+- **Lazy evaluation**: Pagination and limits are applied efficiently
+- **Execution statistics**: Get detailed performance metrics for each query
+
+### Query Result Structure
+
+```typescript
+interface QueryResult<T> {
+  data: T[];                           // Query results
+  pagination?: PaginationInfo;         // Pagination details (if used)
+  aggregations?: AggregationResult[];  // Aggregation results (if used)
+  stats: {
+    totalRecords: number;              // Total records before filtering
+    filteredRecords: number;           // Records after filtering
+    executionTime: number;             // Query execution time (ms)
+    usedIndex: boolean;                // Whether indexes were used
+  };
+}
+```
 
 ### License
 

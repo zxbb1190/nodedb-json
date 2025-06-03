@@ -21,3 +21,4 @@ logo.svg
 .cursor/
 -p
 test-upgrade/
+COMPLEX_QUERY_FEATURES.md

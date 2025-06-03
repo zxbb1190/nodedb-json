@@ -1,0 +1,30 @@
+{
+  "test": "hello world",
+  "users": [
+    {
+      "id": 1,
+      "name": "张三",
+      "age": 26
+    }
+  ],
+  "employees": [
+    {
+      "id": 1,
+      "name": "王五",
+      "department": "技术部",
+      "salary": 15000
+    },
+    {
+      "id": 2,
+      "name": "赵六",
+      "department": "销售部",
+      "salary": 12000
+    },
+    {
+      "id": 3,
+      "name": "钱七",
+      "department": "技术部",
+      "salary": 13000
+    }
+  ]
+}

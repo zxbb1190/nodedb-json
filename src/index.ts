@@ -1,6 +1,23 @@
 import * as fs from 'fs';
 import * as _ from 'lodash';
-import { AnyValue, PredicateFunction, UpdaterObject, DbOptions, IndexDefinition, IndexType, IndexStore } from './types';
+import { 
+  AnyValue, 
+  PredicateFunction, 
+  UpdaterObject, 
+  DbOptions, 
+  IndexDefinition, 
+  IndexType, 
+  IndexStore,
+  QueryOptions,
+  QueryResult,
+  SortOption,
+  SortDirection,
+  PaginationOption,
+  PaginationResult,
+  AggregationOption,
+  AggregationResult,
+  AggregationType
+} from './types';
 
 /**
  * A class to manage JSON-based database operations.
@@ -588,12 +605,391 @@ class NodedbJson {
     const indexData = this._indexes[indexKey][strValue];
     return typeof indexData === 'number' ? [indexData] : indexData;
   }
+
+  /**
+   * 复杂查询操作，支持排序、分页、聚合等
+   * @param {string} key - 集合路径
+   * @param {QueryOptions} options - 查询选项
+   * @returns {QueryResult} - 查询结果
+   */
+  query<T = any>(key: string, options: QueryOptions<T> = {}): QueryResult<T> {
+    const startTime = performance.now();
+    
+    const data = this.get(key);
+    if (!Array.isArray(data)) {
+      throw new Error(`Key "${key}" does not reference an array.`);
+    }
+    
+    const totalRecords = data.length;
+    let filteredData = [...data];
+    let usedIndex = false;
+    
+    // 1. 应用过滤条件 (WHERE)
+    if (options.where) {
+      const filterResult = this._applyFilter(key, filteredData, options.where);
+      filteredData = filterResult.data;
+      usedIndex = filterResult.usedIndex;
+    }
+    
+    const filteredRecords = filteredData.length;
+    
+    // 2. 应用排序 (ORDER BY)
+    if (options.sort) {
+      filteredData = this._applySort(filteredData, options.sort);
+    }
+    
+    // 3. 应用跳过和限制 (SKIP/LIMIT)
+    if (options.skip && options.skip > 0) {
+      filteredData = filteredData.slice(options.skip);
+    }
+    
+    if (options.limit && options.limit > 0) {
+      filteredData = filteredData.slice(0, options.limit);
+    }
+    
+    // 4. 应用分页 (PAGINATION)
+    let paginationInfo: PaginationResult<T>['pagination'] | undefined;
+    if (options.pagination) {
+      const paginationResult = this._applyPagination(filteredData, options.pagination);
+      filteredData = paginationResult.data;
+      paginationInfo = paginationResult.pagination;
+    }
+    
+    // 5. 应用字段选择 (SELECT)
+    if (options.select && options.select.length > 0) {
+      filteredData = this._applySelect(filteredData, options.select);
+    }
+    
+    // 6. 计算聚合 (AGGREGATION)
+    let aggregations: AggregationResult[] | undefined;
+    if (options.aggregation && options.aggregation.length > 0) {
+      // 注意：聚合使用原始过滤后的数据（未分页）
+      const originalFiltered = this.get(key);
+      let aggregationData = Array.isArray(originalFiltered) ? [...originalFiltered] : [];
+      
+      if (options.where) {
+        const filterResult = this._applyFilter(key, aggregationData, options.where);
+        aggregationData = filterResult.data;
+      }
+      
+      aggregations = this._applyAggregation(aggregationData, options.aggregation);
+    }
+    
+    const executionTime = performance.now() - startTime;
+    
+    return {
+      data: filteredData,
+      pagination: paginationInfo,
+      aggregations,
+      stats: {
+        totalRecords,
+        filteredRecords,
+        executionTime,
+        usedIndex
+      }
+    };
+  }
+
+  /**
+   * 应用过滤条件
+   * @param {string} key - 集合路径
+   * @param {T[]} data - 数据数组
+   * @param {PredicateFunction<T> | Record<string, any>} where - 过滤条件
+   * @returns {{data: T[], usedIndex: boolean}} - 过滤结果
+   */
+  private _applyFilter<T>(
+    key: string, 
+    data: T[], 
+    where: PredicateFunction<T> | Record<string, any>
+  ): { data: T[], usedIndex: boolean } {
+    let usedIndex = false;
+    
+    if (typeof where === 'function') {
+      // 使用谓词函数过滤
+      return { data: data.filter(where as PredicateFunction<T>), usedIndex: false };
+    }
+    
+    // 使用对象条件过滤，尝试使用索引优化
+    if (typeof where === 'object' && this.options.enableIndexing) {
+      // 检查是否可以使用索引
+      const indexableFields = Object.keys(where).filter(field => 
+        this._hasIndexOnField(key, field)
+      );
+      
+      if (indexableFields.length > 0) {
+        // 使用第一个有索引的字段进行快速过滤
+        const field = indexableFields[0];
+        const value = where[field];
+        const indexes = this._getItemIndexesByField(key, field, value);
+        
+        if (indexes.length > 0) {
+          usedIndex = true;
+          let filteredData = indexes.map(index => data[index]).filter(Boolean);
+          
+          // 应用其他条件
+          const otherConditions = _.omit(where, field);
+          if (Object.keys(otherConditions).length > 0) {
+            filteredData = filteredData.filter(item => 
+              this._matchesConditions(item, otherConditions)
+            );
+          }
+          
+          return { data: filteredData, usedIndex };
+        }
+      }
+    }
+    
+    // 常规过滤
+    const filteredData = data.filter(item => 
+      this._matchesConditions(item, where as Record<string, any>)
+    );
+    
+    return { data: filteredData, usedIndex };
+  }
+
+  /**
+   * 检查项是否匹配条件
+   * @param {any} item - 数据项
+   * @param {Record<string, any>} conditions - 条件对象
+   * @returns {boolean} - 是否匹配
+   */
+  private _matchesConditions(item: any, conditions: Record<string, any>): boolean {
+    for (const [field, value] of Object.entries(conditions)) {
+      if (_.get(item, field) !== value) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * 应用排序
+   * @param {T[]} data - 数据数组
+   * @param {SortOption | SortOption[]} sort - 排序选项
+   * @returns {T[]} - 排序后的数据
+   */
+  private _applySort<T>(data: T[], sort: SortOption | SortOption[]): T[] {
+    const sortOptions = Array.isArray(sort) ? sort : [sort];
+    
+    return _.orderBy(
+      data,
+      sortOptions.map(option => option.field),
+      sortOptions.map(option => option.direction)
+    );
+  }
+
+  /**
+   * 应用分页
+   * @param {T[]} data - 数据数组
+   * @param {PaginationOption} pagination - 分页选项
+   * @returns {PaginationResult<T>} - 分页结果
+   */
+  private _applyPagination<T>(data: T[], pagination: PaginationOption): PaginationResult<T> {
+    const { page, pageSize } = pagination;
+    const totalItems = data.length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const currentPage = Math.max(1, Math.min(page, totalPages));
+    
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedData = data.slice(startIndex, endIndex);
+    
+    return {
+      data: paginatedData,
+      pagination: {
+        currentPage,
+        pageSize,
+        totalItems,
+        totalPages,
+        hasPrevious: currentPage > 1,
+        hasNext: currentPage < totalPages
+      }
+    };
+  }
+
+  /**
+   * 应用字段选择
+   * @param {T[]} data - 数据数组
+   * @param {string[]} select - 选择的字段
+   * @returns {T[]} - 选择后的数据
+   */
+  private _applySelect<T>(data: T[], select: string[]): T[] {
+    return data.map(item => _.pick(item, select)) as T[];
+  }
+
+  /**
+   * 应用聚合操作
+   * @param {any[]} data - 数据数组
+   * @param {AggregationOption[]} aggregations - 聚合选项
+   * @returns {AggregationResult[]} - 聚合结果
+   */
+  private _applyAggregation(data: any[], aggregations: AggregationOption[]): AggregationResult[] {
+    return aggregations.map(agg => {
+      switch (agg.type) {
+        case 'count':
+          return {
+            type: 'count',
+            value: data.length
+          };
+          
+        case 'sum':
+          if (!agg.field) {
+            throw new Error('Sum aggregation requires a field');
+          }
+          return {
+            type: 'sum',
+            field: agg.field,
+            value: _.sumBy(data, agg.field)
+          };
+          
+        case 'avg':
+          if (!agg.field) {
+            throw new Error('Average aggregation requires a field');
+          }
+          return {
+            type: 'avg',
+            field: agg.field,
+            value: _.meanBy(data, agg.field)
+          };
+          
+        case 'min':
+          if (!agg.field) {
+            throw new Error('Min aggregation requires a field');
+          }
+          return {
+            type: 'min',
+            field: agg.field,
+            value: _.minBy(data, agg.field)?.[agg.field] || 0
+          };
+          
+        case 'max':
+          if (!agg.field) {
+            throw new Error('Max aggregation requires a field');
+          }
+          return {
+            type: 'max',
+            field: agg.field,
+            value: _.maxBy(data, agg.field)?.[agg.field] || 0
+          };
+          
+        case 'group':
+          if (!agg.groupBy) {
+            throw new Error('Group aggregation requires a groupBy field');
+          }
+          return {
+            type: 'group',
+            groupBy: agg.groupBy,
+            value: _.groupBy(data, agg.groupBy)
+          };
+          
+        default:
+          throw new Error(`Unsupported aggregation type: ${agg.type}`);
+      }
+    });
+  }
+
+  /**
+   * 快速排序查询（优化版本）
+   * @param {string} key - 集合路径
+   * @param {SortOption | SortOption[]} sort - 排序选项
+   * @param {number} [limit] - 限制返回数量
+   * @returns {T[]} - 排序后的数据
+   */
+  orderBy<T = any>(key: string, sort: SortOption | SortOption[], limit?: number): T[] {
+    const data = this.get(key);
+    if (!Array.isArray(data)) {
+      throw new Error(`Key "${key}" does not reference an array.`);
+    }
+    
+    const sortOptions = Array.isArray(sort) ? sort : [sort];
+    let sortedData = _.orderBy(
+      data,
+      sortOptions.map(option => option.field),
+      sortOptions.map(option => option.direction)
+    );
+    
+    if (limit && limit > 0) {
+      sortedData = sortedData.slice(0, limit);
+    }
+    
+    return sortedData;
+  }
+
+  /**
+   * 快速分页查询
+   * @param {string} key - 集合路径
+   * @param {number} page - 页码（从1开始）
+   * @param {number} pageSize - 每页数量
+   * @param {PredicateFunction<T> | Record<string, any>} [where] - 过滤条件
+   * @returns {PaginationResult<T>} - 分页结果
+   */
+  paginate<T = any>(
+    key: string, 
+    page: number, 
+    pageSize: number, 
+    where?: PredicateFunction<T> | Record<string, any>
+  ): PaginationResult<T> {
+    const result = this.query<T>(key, {
+      where,
+      pagination: { page, pageSize }
+    });
+    
+    return {
+      data: result.data,
+      pagination: result.pagination!
+    };
+  }
+
+  /**
+   * 聚合查询
+   * @param {string} key - 集合路径
+   * @param {AggregationOption[]} aggregations - 聚合选项
+   * @param {PredicateFunction<T> | Record<string, any>} [where] - 过滤条件
+   * @returns {AggregationResult[]} - 聚合结果
+   */
+  aggregate<T = any>(
+    key: string, 
+    aggregations: AggregationOption[], 
+    where?: PredicateFunction<T> | Record<string, any>
+  ): AggregationResult[] {
+    const result = this.query<T>(key, {
+      where,
+      aggregation: aggregations
+    });
+    
+    return result.aggregations || [];
+  }
+
+  /**
+   * 统计查询
+   * @param {string} key - 集合路径
+   * @param {PredicateFunction<T> | Record<string, any>} [where] - 过滤条件
+   * @returns {number} - 统计数量
+   */
+  count<T = any>(key: string, where?: PredicateFunction<T> | Record<string, any>): number {
+    const result = this.aggregate<T>(key, [{ type: 'count' }], where);
+    return result[0]?.value as number || 0;
+  }
+
+  /**
+   * 去重查询
+   * @param {string} key - 集合路径
+   * @param {string} field - 去重字段
+   * @returns {any[]} - 去重后的值数组
+   */
+  distinct(key: string, field: string): any[] {
+    const data = this.get(key);
+    if (!Array.isArray(data)) {
+      throw new Error(`Key "${key}" does not reference an array.`);
+    }
+    
+    return _.uniqBy(data, field).map(item => _.get(item, field));
+  }
 }
 
 // 导出类
 export default NodedbJson;
 
 // 为了兼容 CommonJS 导出
-if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
-  module.exports = NodedbJson;
-} 
+module.exports = NodedbJson;
+module.exports.default = NodedbJson; 

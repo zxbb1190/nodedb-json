@@ -1,4 +1,4 @@
-import { AnyValue, PredicateFunction, UpdaterObject, DbOptions, IndexDefinition } from './types';
+import { AnyValue, PredicateFunction, UpdaterObject, DbOptions, IndexDefinition, QueryOptions, QueryResult, SortOption, PaginationResult, AggregationOption, AggregationResult } from './types';
 /**
  * A class to manage JSON-based database operations.
  */
@@ -180,5 +180,94 @@ declare class NodedbJson {
      * @returns {number[]} - 找到的索引位置数组
      */
     private _getItemIndexesByField;
+    /**
+     * 复杂查询操作，支持排序、分页、聚合等
+     * @param {string} key - 集合路径
+     * @param {QueryOptions} options - 查询选项
+     * @returns {QueryResult} - 查询结果
+     */
+    query<T = any>(key: string, options?: QueryOptions<T>): QueryResult<T>;
+    /**
+     * 应用过滤条件
+     * @param {string} key - 集合路径
+     * @param {T[]} data - 数据数组
+     * @param {PredicateFunction<T> | Record<string, any>} where - 过滤条件
+     * @returns {{data: T[], usedIndex: boolean}} - 过滤结果
+     */
+    private _applyFilter;
+    /**
+     * 检查项是否匹配条件
+     * @param {any} item - 数据项
+     * @param {Record<string, any>} conditions - 条件对象
+     * @returns {boolean} - 是否匹配
+     */
+    private _matchesConditions;
+    /**
+     * 应用排序
+     * @param {T[]} data - 数据数组
+     * @param {SortOption | SortOption[]} sort - 排序选项
+     * @returns {T[]} - 排序后的数据
+     */
+    private _applySort;
+    /**
+     * 应用分页
+     * @param {T[]} data - 数据数组
+     * @param {PaginationOption} pagination - 分页选项
+     * @returns {PaginationResult<T>} - 分页结果
+     */
+    private _applyPagination;
+    /**
+     * 应用字段选择
+     * @param {T[]} data - 数据数组
+     * @param {string[]} select - 选择的字段
+     * @returns {T[]} - 选择后的数据
+     */
+    private _applySelect;
+    /**
+     * 应用聚合操作
+     * @param {any[]} data - 数据数组
+     * @param {AggregationOption[]} aggregations - 聚合选项
+     * @returns {AggregationResult[]} - 聚合结果
+     */
+    private _applyAggregation;
+    /**
+     * 快速排序查询（优化版本）
+     * @param {string} key - 集合路径
+     * @param {SortOption | SortOption[]} sort - 排序选项
+     * @param {number} [limit] - 限制返回数量
+     * @returns {T[]} - 排序后的数据
+     */
+    orderBy<T = any>(key: string, sort: SortOption | SortOption[], limit?: number): T[];
+    /**
+     * 快速分页查询
+     * @param {string} key - 集合路径
+     * @param {number} page - 页码（从1开始）
+     * @param {number} pageSize - 每页数量
+     * @param {PredicateFunction<T> | Record<string, any>} [where] - 过滤条件
+     * @returns {PaginationResult<T>} - 分页结果
+     */
+    paginate<T = any>(key: string, page: number, pageSize: number, where?: PredicateFunction<T> | Record<string, any>): PaginationResult<T>;
+    /**
+     * 聚合查询
+     * @param {string} key - 集合路径
+     * @param {AggregationOption[]} aggregations - 聚合选项
+     * @param {PredicateFunction<T> | Record<string, any>} [where] - 过滤条件
+     * @returns {AggregationResult[]} - 聚合结果
+     */
+    aggregate<T = any>(key: string, aggregations: AggregationOption[], where?: PredicateFunction<T> | Record<string, any>): AggregationResult[];
+    /**
+     * 统计查询
+     * @param {string} key - 集合路径
+     * @param {PredicateFunction<T> | Record<string, any>} [where] - 过滤条件
+     * @returns {number} - 统计数量
+     */
+    count<T = any>(key: string, where?: PredicateFunction<T> | Record<string, any>): number;
+    /**
+     * 去重查询
+     * @param {string} key - 集合路径
+     * @param {string} field - 去重字段
+     * @returns {any[]} - 去重后的值数组
+     */
+    distinct(key: string, field: string): any[];
 }
 export default NodedbJson;
